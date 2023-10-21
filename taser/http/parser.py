@@ -16,7 +16,8 @@ class URLParser:
             params=p.query,
             proto=p.scheme,
             tag=p.fragment,
-            extension=cls.extract_extension(data)
+            extension=cls.extract_extension(data),
+            port=cls.extract_port(data)
         )
 
     @staticmethod
@@ -73,6 +74,13 @@ class URLParser:
     def rm_slash(url):
         # http://test.com/admin/ --> http://test.com/admin
         return url[:-1] if url.endswith('/') else url
+
+    @staticmethod
+    def rm_base_url(url):
+        # https://test.com/admin?abc=1 --> /admin?abc=1
+        parsed_url = urlparse(url)
+        path_query_fragment = parsed_url.path + parsed_url.query + parsed_url.fragment
+        return path_query_fragment if path_query_fragment else '/'
 
     @staticmethod
     def url_format(url):

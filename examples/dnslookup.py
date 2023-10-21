@@ -67,7 +67,7 @@ def do_zone_transfer(target):
 
 
 def main(args):
-    for t in ipparser(args.target[0]):
+    for t in ipparser(args.target):
         try:
             if args.rev:
                 do_reverse_lookup(t, args.data_only)

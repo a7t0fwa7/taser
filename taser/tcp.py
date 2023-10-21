@@ -17,11 +17,8 @@ class PySocks3:
             ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
-            self.sock = ctx.wrap_socket(self.target, server_hostname=target, do_handshake_on_connect=True)
+            self.sock = ctx.wrap_socket(target, server_hostname=target, do_handshake_on_connect=True)
         return self
-
-    def set_ssl_version(self, ssl_version):
-        self.sock = ssl.wrap_socket(self.target, keyfile=None, certfile=None, server_side=False, cert_reqs=ssl.CERT_NONE, ssl_version=ssl_version)
 
     def set_timeout(self, timeout):
         socket.setdefaulttimeout(timeout)
@@ -52,7 +49,7 @@ class PySocks3:
         data = b''
         try:
             while True:
-                new =self.sock.recv(buff_size)
+                new = self.sock.recv(buff_size)
                 data += new
                 if len(str(new)) < buff_size:
                     return data.decode('utf-8').rstrip('\n')

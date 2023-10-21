@@ -66,7 +66,7 @@ def remove_special(value):
 
 
 def delimiter2list(value, delim=","):
-    return value.split(delim) if value else []
+    return [x.strip() for x in value.split(delim)] if value else []
 
 
 def delimiter2dict(value, delim_one=";", delim_two=":"):

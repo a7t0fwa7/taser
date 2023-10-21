@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='taser',
-    version='0.4.0',
+    version='0.4.1',
     author='m8sec',
     description='Security Resource library',
     long_description=long_description,
