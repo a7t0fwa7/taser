@@ -4,7 +4,7 @@
 # Source: https://github.com/m8sec/taser
 # License: BSD 3-Clause License
 #
-# Copyright (c) 2023, m8sec
+# Copyright (c) 2024, m8sec
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,15 +34,15 @@
 
 import logging
 from sys import argv
-import pkg_resources
+import importlib.metadata
 from taser.logx import highlight_a
 
 LOG = logging.getLogger(__name__)
 LOG.addHandler(logging.NullHandler())
 
 try:
-    VERSION = pkg_resources.get_distribution('taser').version
-except:
+    VERSION = importlib.metadata.version('taser')
+except importlib.metadata.PackageNotFoundError:
     VERSION = ""
 
 AUTHOR = 'm8sec'

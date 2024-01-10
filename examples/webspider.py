@@ -47,6 +47,7 @@ class TaserSpider(spider.Spider):
         # Enumeration arrays
         self._subdomains = []
         self._emails = []
+        self._dups = set()
 
     def set_regex(self):
         self.regex_js_comment = r'\/\*.*\*\/|https\:\/\/.*|http\:\/\/.*|\/\/.*'
@@ -88,7 +89,7 @@ class TaserSpider(spider.Spider):
             'slack_token': r"\"api_token\":\"(xox[a-zA-Z]-[a-zA-Z0-9-]+)\"",
             'SSH_privKey': r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)",
             'Heroku API KEY': r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
-            'possible_Creds': r"(?i)(" \
+            'Creds': r"(?i)(" \
                             r"password\s*[`=:\"]+\s*[^\s]+|" \
                             r"password is\s*[`=:\"]*\s*[^\s]+|" \
                             r"pwd\s*[`=:\"]*\s*[^\s]+|" \
@@ -168,8 +169,8 @@ class TaserSpider(spider.Spider):
         if args.secrets:
             for k, r in self.regex_secrets.items():
                 for match in re.findall(r, str(data)):
-                    cliLogger.success('{} => {}'.format(resp.url, match), bullet='[JS-SECRET] ', fg='cyan')
-                    fileLogger.info('"JS-SECRET","{}","{}"'.format(resp.url, match))
+                    cliLogger.success('{} => {}'.format(resp.url, match), bullet='[JS-SECRET::{}] '.format(k), fg='cyan')
+                    fileLogger.info('"JS-SECRET:","{}","{}"'.format(resp.url, match))
 
     def enum_html_links(self, url, resp):
         url = url
@@ -211,17 +212,20 @@ class TaserSpider(spider.Spider):
         if args.comments:
             soup = BeautifulSoup(resp.content, "lxml")
             for c in soup.find_all(string=lambda text: isinstance(text, Comment)):
-                cliLogger.success('{} => {}'.format(resp.url, c), bullet='[HTML-COMMENT] ', fg='cyan')
-                fileLogger.info('"HTML-COMMENT","{}","{}"'.format(resp.url, c))
+                tmp_id = f'{resp.url.lower()}__{c.lower()}'
+                if {tmp_id} not in self._dups:
+                    self._dups.add(tmp_id)
+                    cliLogger.success('{} => {}'.format(resp.url, c), bullet='[HTML-COMMENT] ', fg='cyan')
+                    fileLogger.info('"HTML-COMMENT","{}","{}"'.format(resp.url, c))
 
     def enum_js_comments(self, data, resp):
         if args.comments:
             for match in re.findall(self.regex_js_comment, str(data)):
-                if not match.startswith(('https:', 'http:')):
+                tmp_id = f'{resp.url.lower()}__{match.lower()}'
+                if not match.startswith(('https:', 'http:')) and {tmp_id} not in self._dups:
+                    self._dups.add(tmp_id)
                     cliLogger.success('{} => {}'.format(resp.url, match), bullet='[JS-COMMENT] ', fg='cyan')
                     fileLogger.info('"JS-COMMENT","{}","{}"'.format(resp.url, match))
-
-
 
 
 if __name__ == '__main__':

@@ -36,6 +36,7 @@ def do_reverse_lookup(target, data_only):
     try:
         for x in DNSutils.reverse(target, NS):
             if data_only:
+                x = x[:-1] if x.endswith('.') else x
                 cliLogger.write(x)
                 fileLogger.info(x)
             else:

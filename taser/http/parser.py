@@ -1,6 +1,7 @@
 from argparse import Namespace
 from tldextract import extract
 from urllib.parse import urlparse
+from taser.utils import ipcheck
 
 
 class URLParser:
@@ -24,12 +25,27 @@ class URLParser:
     def extract_webdomain(url):
         # test.example.com --> example.com
         x = extract(url)
-        return '.'.join([x.domain, x.suffix])
+        return x.domain if ipcheck(x.domain) else '.'.join([x.domain, x.suffix])
 
     @staticmethod
     def extract_subdomain(url):
         # https://test.example.com/login --> test.example.com
-        return urlparse(url).netloc
+        sub = urlparse(url).netloc
+        return sub.split(':')[0] if ':' in sub else sub
+
+    @staticmethod
+    def extract_port(url, default=443):
+        # Extract subdomain without stripping port
+        parsed_url = urlparse(url)
+        netloc = parsed_url.netloc
+
+        if ':' in netloc:
+            return int(netloc.split(':')[-1])
+        elif url.startswith('https://'):
+            return 443
+        elif url.startswith('http://'):
+            return 80
+        return default
 
     @staticmethod
     def extract_path(url):

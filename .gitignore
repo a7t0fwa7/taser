@@ -31,6 +31,4 @@ venv/
 
 # custom
 docs/
-examples/dev/
-examples/priv/
-TODO.txt
+*.txt

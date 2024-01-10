@@ -1,13 +1,18 @@
-beautifulsoup4
-bs4
-cryptography
 dnspython
+cryptography
 ipparser>=1.0.0
+
+# HTTP
+bs4
 lxml
-ntlm-auth
 requests
+ntlm-auth
+tldextract
 requests-file
 requests-ntlm
-tldextract
+beautifulsoup4
+
+# HTTP Browser
 selenium
+selenium-wire
 webdriver-manager

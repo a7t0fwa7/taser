@@ -17,7 +17,7 @@ class PySocks3:
             ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
-            self.sock = ctx.wrap_socket(target, server_hostname=target, do_handshake_on_connect=True)
+            self.sock = ctx.wrap_socket(self.sock, server_hostname=target, do_handshake_on_connect=True)
         return self
 
     def set_timeout(self, timeout):

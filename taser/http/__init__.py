@@ -1,14 +1,16 @@
 import logging
 import requests
 import warnings
-from taser import LOG
 from random import choice
 from bs4 import BeautifulSoup
 from requests_ntlm import HttpNtlmAuth
-from taser.http.parser import URLParser
 from urllib3 import disable_warnings, exceptions
-from taser.resources.user_agents import USER_AGENTS
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+
+from taser import LOG
+from taser.http.parser import URLParser
+from taser.resources.user_agents import USER_AGENTS
+from taser.http.browser import web_browser, get_proxy
 
 disable_warnings(exceptions.InsecureRequestWarning)                     # Prevent SSL warnings & cert verification msg
 warnings.filterwarnings("ignore", category=UserWarning, module='bs4')   # Hide parser msg
@@ -16,21 +18,17 @@ logging.getLogger("charset_normalizer").setLevel(logging.WARNING)       # Hide "
 
 
 class WebSession:
-    def __init__(self, headers={}):
-        # Define new session
+    def __init__(self):
+        # Init new session & blank CookieJar
         self.session = requests.Session()
 
-        # Auto random UA
-        self.session.headers.update(headers)
-        if 'User-Agent' not in headers:
-            self.add_header('User-Agent', random_agent())
-
+        # Remove Max retries / make room for our own implementation
         adapter = requests.adapters.HTTPAdapter(pool_connections=1, max_retries=0)
         self.session.mount('http://', adapter)
         self.session.mount('https://', adapter)
 
     def retry(self, url, method, headers, timeout, redirects, max_retries, proxies, **kwargs):
-        # Built-in retry functionality does not currently rotate proxies. Therefore, this custom method
+        # Built-in retry does not rotate proxies. Therefore, this custom method
         # pulls a new proxy from the list and retries the current page.
         r = 0
         while r < max_retries:
@@ -40,13 +38,15 @@ class WebSession:
             if get_statuscode(x): return x
         return False
 
-    def request(self, url, method='GET', headers={}, timeout=4, redirects=True, max_retries=0, proxies=[], **kwargs):
+    def request(self, url, method='GET', headers={}, cookies={}, timeout=4, redirects=True, max_retries=0, proxies=[], **kwargs):
         prox = get_proxy(proxies)
+        self.session.cookies.update(cookies)
         self.session.headers.update(headers)
+        self.add_header('User-Agent', random_agent()) if "requests" in self.session.headers['User-Agent'] else False
 
         try:
-            req = requests.Request(method, url, headers=self.session.headers, **kwargs)
-            prep = req.prepare()
+            req = requests.Request(method, url, **kwargs)
+            prep = self.session.prepare_request(req)
             return self.session.send(prep, timeout=timeout, verify=False, allow_redirects=redirects, proxies=prox)
         except requests.exceptions.RequestException as e:
             LOG.debug('Web_Request:Requests::{}'.format(e))
@@ -69,13 +69,20 @@ class WebSession:
         self.session.close()
 
 
-def web_request(url, method='GET', headers={}, timeout=3,  redirects=True, max_retries=0, proxies=[], **kwargs):
+def web_request(url, method='GET', headers={}, cookies={}, timeout=3, redirects=True, max_retries=0, proxies=[], **kwargs):
     # Execute single http request via self handling of WebSession class
     s = WebSession()
     try:
-        return s.request(url, method, headers, timeout, redirects, max_retries, proxies, **kwargs)
+        return s.request(url, method, headers, cookies, timeout, redirects, max_retries, proxies, **kwargs)
     finally:
         s.close()
+
+
+def get_request(url, headers={}, cookies={}, timeout=3, redirects=True, screenshot=False, proxies=[], browser=False, install=False):
+    # Function to easily switch between selenium / python-requests for HTTP GET requests ONLY.
+    if browser:
+        return web_browser(url, headers, cookies, timeout, screenshot, proxies, install)
+    return web_request(url, headers=headers, cookies=cookies, timeout=timeout, redirects=redirects, proxies=proxies)
 
 
 def download_file(source, output, timeout=5):
@@ -87,13 +94,6 @@ def download_file(source, output, timeout=5):
 # HTTP request support functions
 def random_agent():
     return choice(USER_AGENTS)
-
-def get_proxy(proxies):
-    # Randomize proxy input values
-    if not proxies:
-        return {}
-    tmp = choice(proxies)
-    return {"http": tmp, "https": tmp}
 
 
 def auth_handler(username, password, auth_type='basic'):
@@ -107,7 +107,7 @@ def auth_handler(username, password, auth_type='basic'):
 def get_statuscode(resp):
     # Take in requests obj, return status code (0=invalid response)
     try:
-        return resp.status_code
+        return int(resp.status_code)
     except:
         return 0
 
