@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='taser',
-    version='0.4.1',
+    version='0.4.2',
     author='m8sec',
     description='Security Resource library',
     long_description=long_description,
@@ -20,7 +20,8 @@ setup(
         '': ['*']
     },
     install_requires=['beautifulsoup4', 'bs4', 'cryptography', 'dnspython', 'ipparser>=1.0.0', 'lxml', 'ntlm-auth',
-                      'requests', 'requests-file', 'requests-ntlm', 'tldextract', 'selenium', 'webdriver-manager'],
+                      'requests', 'requests-file', 'requests-ntlm', 'tldextract', 'selenium', 'selenium-wire',
+                      'webdriver-manager'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Intended Audience :: Developers",
